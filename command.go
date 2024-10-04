@@ -19,6 +19,22 @@ type Context struct {
 	Out  io.Writer
 }
 
+func (c Context) Println(a ...any) {
+	_, _ = fmt.Fprintln(c.Out, a...)
+}
+
+func (c Context) Printfln(format string, a ...any) {
+	_, _ = fmt.Fprintf(c.Out, format+"\n", a...)
+}
+
+func (c Context) Errorln(a ...any) {
+	_, _ = fmt.Fprintln(c.Err, a...)
+}
+
+func (c Context) Errorfln(format string, a ...any) {
+	_, _ = fmt.Fprintf(c.Err, format+"\n", a...)
+}
+
 // Command can be run with a Context.
 type Command interface {
 	Run(ctx Context) error
@@ -52,7 +68,7 @@ func Run(cmd Command) {
 	}
 
 	if err := cmd.Run(cmdCtx); err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, "Error:", err)
+		cmdCtx.Errorln("Error:", err)
 		os.Exit(1)
 	}
 }
