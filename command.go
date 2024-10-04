@@ -1,8 +1,9 @@
-// Package clir provides a definition of a runnable [Command] as well as a [CommandMux], which is a multiplexer/router for commands.
+// Package clir provides a definition of a runnable [Command] as well as a [CommandRouter], which is a multiplexer/router for commands.
 package clir
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"os/signal"
@@ -31,13 +32,14 @@ func (f CommandFunc) Run(ctx Context) error {
 	return f(ctx)
 }
 
-// Run a [Command] with default options, which are:
+// Run a [Command] with default a [Context], which is:
 // - Get args from [os.Args]
 // - Create context which is cancelled on [syscall.SIGTERM] or [syscall.SIGINT]
 // - Use [os.Stdin] for input
 // - Use [os.Stdout] for output
 // - Use [os.Stderr] for errors
-func Run(cmd Command) error {
+// - Prints to [os.Stderr] and calls os.Exit(1) on errors from the command
+func Run(cmd Command) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
 
@@ -49,7 +51,10 @@ func Run(cmd Command) error {
 		Out:  os.Stdout,
 	}
 
-	return cmd.Run(cmdCtx)
+	if err := cmd.Run(cmdCtx); err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, "Error:", err)
+		os.Exit(1)
+	}
 }
 
 var _ Command = (*CommandFunc)(nil)

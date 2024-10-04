@@ -1,18 +1,19 @@
 package clir
 
-// CommandMux is a multiplexer/router for commands which itself satisfies [Command].
-type CommandMux struct {
+// CommandRouter is a router for commands which itself satisfies [Command].
+type CommandRouter struct {
 	patterns []string
 	commands map[string]Command
 }
 
-func NewCommandMux() *CommandMux {
-	return &CommandMux{
+func NewCommandRouter() *CommandRouter {
+	return &CommandRouter{
 		commands: map[string]Command{},
 	}
 }
 
-func (c *CommandMux) Run(ctx Context) error {
+// Run satisfies [Command].
+func (c *CommandRouter) Run(ctx Context) error {
 	if len(ctx.Args) == 0 {
 		root, ok := c.commands[""]
 		if !ok {
@@ -32,13 +33,13 @@ func (c *CommandMux) Run(ctx Context) error {
 	return ErrorNotFound
 }
 
-func (c *CommandMux) Handle(pattern string, cmd Command) {
+func (c *CommandRouter) Route(pattern string, cmd Command) {
 	c.patterns = append(c.patterns, pattern)
 	c.commands[pattern] = cmd
 }
 
-func (c *CommandMux) HandleFunc(pattern string, cmd CommandFunc) {
-	c.Handle(pattern, cmd)
+func (c *CommandRouter) RouteFunc(pattern string, cmd CommandFunc) {
+	c.Route(pattern, cmd)
 }
 
-var _ Command = (*CommandMux)(nil)
+var _ Command = (*CommandRouter)(nil)
