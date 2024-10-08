@@ -5,6 +5,7 @@ type CommandRouter struct {
 	commands    map[string]Command
 	middlewares []Middleware
 	patterns    []string
+	subRouters  []*CommandRouter
 }
 
 func NewCommandRouter() *CommandRouter {
@@ -42,6 +43,12 @@ func (c *CommandRouter) Run(ctx Context) error {
 		}
 	}
 
+	for _, r := range c.subRouters {
+		if err := r.Run(ctx); err == nil {
+			return err
+		}
+	}
+
 	return ErrorNotFound
 }
 
@@ -57,9 +64,13 @@ func (c *CommandRouter) SubFunc(pattern string, cmd CommandFunc) {
 	c.Sub(pattern, cmd)
 }
 
-// Group commands with a new middleware stack.
+// Group commands with a new router.
+// The middleware from the parent router is copied to the new router.
 func (c *CommandRouter) Group(cb func(r *CommandRouter)) {
-	// TODO
+	r := NewCommandRouter()
+	r.middlewares = append(r.middlewares, c.middlewares...)
+	cb(r)
+	c.subRouters = append(c.subRouters, r)
 }
 
 type Middleware = func(next Command) Command
@@ -67,6 +78,9 @@ type Middleware = func(next Command) Command
 // Use a middleware for all commands. If called on the root router, it will apply to all commands.
 // If called in a Group, it will apply to all commands in that group.
 func (c *CommandRouter) Use(middlewares ...Middleware) {
+	if len(c.commands) > 0 {
+		panic("cannot add middlewares after adding commands")
+	}
 	c.middlewares = append(c.middlewares, middlewares...)
 }
 
