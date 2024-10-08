@@ -35,7 +35,7 @@ func (c Context) Errorfln(format string, a ...any) {
 	_, _ = fmt.Fprintf(c.Err, format+"\n", a...)
 }
 
-// Command can be run with a Context.
+// Command can be run with a [Context].
 type Command interface {
 	Run(ctx Context) error
 }
@@ -60,7 +60,7 @@ func Run(cmd Command) {
 	defer stop()
 
 	cmdCtx := Context{
-		Args: os.Args,
+		Args: os.Args[1:],
 		Ctx:  ctx,
 		Err:  os.Stderr,
 		In:   os.Stdin,
