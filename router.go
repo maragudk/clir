@@ -64,6 +64,13 @@ func (c *CommandRouter) SubFunc(pattern string, cmd CommandFunc) {
 	c.Sub(pattern, cmd)
 }
 
+// SubGroup is a convenience method for adding a subcommand with a new router.
+func (c *CommandRouter) SubGroup(pattern string, cb func(r *CommandRouter)) {
+	r := NewCommandRouter()
+	cb(r)
+	c.Sub(pattern, r)
+}
+
 // Group commands with a new router.
 // The middleware from the parent router is copied to the new router.
 func (c *CommandRouter) Group(cb func(r *CommandRouter)) {

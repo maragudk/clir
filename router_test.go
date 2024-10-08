@@ -232,6 +232,48 @@ func TestCommandRouter_Group(t *testing.T) {
 	})
 }
 
+func TestCommandRouter_SubGroup(t *testing.T) {
+	t.Run("can group commands with a new middleware stack", func(t *testing.T) {
+		r := clir.NewCommandRouter()
+
+		m1 := newMiddleware(t, "m1")
+		m2 := newMiddleware(t, "m2")
+
+		r.Use(m1)
+
+		r.SubGroup("party", func(r *clir.CommandRouter) {
+			r.Use(m2)
+
+			r.SubFunc("", func(ctx clir.Context) error {
+				ctx.Println("party root")
+				return nil
+			})
+
+			r.SubFunc("list", func(ctx clir.Context) error {
+				ctx.Println("party list")
+				return nil
+			})
+		})
+
+		var b strings.Builder
+		err := r.Run(clir.Context{
+			Args: []string{"party"},
+			Out:  &b,
+		})
+		is.NotError(t, err)
+		is.Equal(t, "m1\nm2\nparty root\n", b.String())
+
+		b.Reset()
+
+		err = r.Run(clir.Context{
+			Args: []string{"party", "list"},
+			Out:  &b,
+		})
+		is.NotError(t, err)
+		is.Equal(t, "m1\nm2\nparty list\n", b.String())
+	})
+}
+
 func newMiddleware(t *testing.T, name string) clir.Middleware {
 	return func(next clir.Command) clir.Command {
 		return clir.CommandFunc(func(ctx clir.Context) error {
