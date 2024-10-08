@@ -53,6 +53,7 @@ func (r *Router) Run(ctx Context) error {
 }
 
 // Route a [Runner] with the given pattern.
+// Routes are matched in the order they were added.
 func (r *Router) Route(pattern string, runner Runner) {
 	r.patterns = append(r.patterns, pattern)
 	r.runners[pattern] = runner
@@ -71,8 +72,8 @@ func (r *Router) Branch(pattern string, cb func(r *Router)) {
 }
 
 // Scope into a new [Router].
-// The middleware from the parent router is copied to the new router,
-// but new middleware is only added to the new router, not the parent router.
+// The middlewares from the parent router are copied to the new router,
+// but new middlewares within the scope are only added to the new router, not the parent router.
 func (r *Router) Scope(cb func(r *Router)) {
 	newR := NewRouter()
 	newR.middlewares = append(newR.middlewares, r.middlewares...)
