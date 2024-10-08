@@ -1,4 +1,4 @@
-// Package clir provides a definition of a runnable [Command] as well as a [CommandRouter], which is a multiplexer/router for commands.
+// Package clir provides a definition of a [Router] and a [Runner].
 package clir
 
 import (
@@ -10,7 +10,7 @@ import (
 	"syscall"
 )
 
-// Context for a [Command] that runs.
+// Context for a [Runner] when it runs.
 type Context struct {
 	Args []string
 	Ctx  context.Context
@@ -35,31 +35,31 @@ func (c Context) Errorfln(format string, a ...any) {
 	_, _ = fmt.Fprintf(c.Err, format+"\n", a...)
 }
 
-// Command can be run with a [Context].
-type Command interface {
+// Runner can run with a [Context].
+type Runner interface {
 	Run(ctx Context) error
 }
 
-// CommandFunc is a function which satisfies [Command].
-type CommandFunc func(ctx Context) error
+// RunnerFunc is a function which satisfies [Runner].
+type RunnerFunc func(ctx Context) error
 
-// Run satisfies [Command].
-func (f CommandFunc) Run(ctx Context) error {
+// Run satisfies [Runner].
+func (f RunnerFunc) Run(ctx Context) error {
 	return f(ctx)
 }
 
-// Run a [Command] with default a [Context], which is:
+// Run a [Runner] with a default [Context], which is:
 // - Get args from [os.Args]
 // - Create context which is cancelled on [syscall.SIGTERM] or [syscall.SIGINT]
 // - Use [os.Stdin] for input
 // - Use [os.Stdout] for output
 // - Use [os.Stderr] for errors
-// - Prints to [os.Stderr] and calls os.Exit(1) on errors from the command
-func Run(cmd Command) {
+// - Prints to [os.Stderr] and calls os.Exit(1) on errors from [Runner.Run]
+func Run(r Runner) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
 
-	cmdCtx := Context{
+	runCtx := Context{
 		Args: os.Args[1:],
 		Ctx:  ctx,
 		Err:  os.Stderr,
@@ -67,10 +67,10 @@ func Run(cmd Command) {
 		Out:  os.Stdout,
 	}
 
-	if err := cmd.Run(cmdCtx); err != nil {
-		cmdCtx.Errorln("Error:", err)
+	if err := r.Run(runCtx); err != nil {
+		runCtx.Errorln("Error:", err)
 		os.Exit(1)
 	}
 }
 
-var _ Command = (*CommandFunc)(nil)
+var _ Runner = (*RunnerFunc)(nil)

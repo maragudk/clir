@@ -9,30 +9,30 @@ import (
 	"maragu.dev/clir"
 )
 
-func TestCommandRouter_Run(t *testing.T) {
-	t.Run("errors on run if there is no root command", func(t *testing.T) {
-		r := clir.NewCommandRouter()
+func TestRouter_Run(t *testing.T) {
+	t.Run("errors on run if there is no root route", func(t *testing.T) {
+		r := clir.NewRouter()
 
 		err := r.Run(clir.Context{})
-		is.Error(t, err, clir.ErrorNotFound)
+		is.Error(t, err, clir.ErrorRouteNotFound)
 	})
 
-	t.Run("errors on run if there is no subcommand", func(t *testing.T) {
-		r := clir.NewCommandRouter()
+	t.Run("errors on run if there is no named route", func(t *testing.T) {
+		r := clir.NewRouter()
 
 		err := r.Run(clir.Context{
-			Args: []string{"party"},
+			Args: []string{"dance"},
 		})
-		is.Error(t, err, clir.ErrorNotFound)
+		is.Error(t, err, clir.ErrorRouteNotFound)
 	})
 }
 
-func TestCommandRouter_SubFunc(t *testing.T) {
-	t.Run("can route and run a root command", func(t *testing.T) {
-		r := clir.NewCommandRouter()
+func TestRouter_RouteFunc(t *testing.T) {
+	t.Run("can route and run a root route", func(t *testing.T) {
+		r := clir.NewRouter()
 
 		var called bool
-		r.SubFunc("", func(ctx clir.Context) error {
+		r.RouteFunc("", func(ctx clir.Context) error {
 			called = true
 			return nil
 		})
@@ -42,40 +42,40 @@ func TestCommandRouter_SubFunc(t *testing.T) {
 		is.True(t, called)
 	})
 
-	t.Run("can route and run a subcommand", func(t *testing.T) {
-		r := clir.NewCommandRouter()
+	t.Run("can route and run a named route", func(t *testing.T) {
+		r := clir.NewRouter()
 
 		var called bool
-		r.SubFunc("party", func(ctx clir.Context) error {
+		r.RouteFunc("dance", func(ctx clir.Context) error {
 			called = true
 			is.Equal(t, 0, len(ctx.Args))
 			return nil
 		})
 
 		err := r.Run(clir.Context{
-			Args: []string{"party"},
+			Args: []string{"dance"},
 		})
 		is.NotError(t, err)
 		is.True(t, called)
 	})
 }
 
-func TestCommandRouter_Use(t *testing.T) {
-	t.Run("can use middlewares on root and subcommands", func(t *testing.T) {
-		r := clir.NewCommandRouter()
+func TestRouter_Use(t *testing.T) {
+	t.Run("can use middlewares on root and named routes", func(t *testing.T) {
+		r := clir.NewRouter()
 
 		m1 := newMiddleware(t, "m1")
 		m2 := newMiddleware(t, "m2")
 
 		r.Use(m1, m2)
 
-		r.SubFunc("", func(ctx clir.Context) error {
+		r.RouteFunc("", func(ctx clir.Context) error {
 			ctx.Println("root")
 			return nil
 		})
 
-		r.SubFunc("party", func(ctx clir.Context) error {
-			ctx.Println("party")
+		r.RouteFunc("dance", func(ctx clir.Context) error {
+			ctx.Println("dance")
 			return nil
 		})
 
@@ -89,17 +89,17 @@ func TestCommandRouter_Use(t *testing.T) {
 		b.Reset()
 
 		err = r.Run(clir.Context{
-			Args: []string{"party"},
+			Args: []string{"dance"},
 			Out:  &b,
 		})
 		is.NotError(t, err)
-		is.Equal(t, "m1\nm2\nparty\n", b.String())
+		is.Equal(t, "m1\nm2\ndance\n", b.String())
 	})
 
-	t.Run("panics if commands are already registered", func(t *testing.T) {
-		r := clir.NewCommandRouter()
+	t.Run("panics if routes are already registered", func(t *testing.T) {
+		r := clir.NewRouter()
 
-		r.SubFunc("", func(ctx clir.Context) error {
+		r.RouteFunc("", func(ctx clir.Context) error {
 			return nil
 		})
 
@@ -113,9 +113,9 @@ func TestCommandRouter_Use(t *testing.T) {
 	})
 }
 
-func TestCommandRouter_Group(t *testing.T) {
-	t.Run("can group commands with a new middleware stack", func(t *testing.T) {
-		r := clir.NewCommandRouter()
+func TestRouter_Scope(t *testing.T) {
+	t.Run("can scope routes with a new middleware stack", func(t *testing.T) {
+		r := clir.NewRouter()
 
 		m1 := newMiddleware(t, "m1")
 		m2 := newMiddleware(t, "m2")
@@ -124,24 +124,24 @@ func TestCommandRouter_Group(t *testing.T) {
 		// Only apply the first one here
 		r.Use(m1)
 
-		r.SubFunc("", func(ctx clir.Context) error {
+		r.RouteFunc("", func(ctx clir.Context) error {
 			ctx.Println("root")
 			return nil
 		})
 
-		r.Group(func(r *clir.CommandRouter) {
+		r.Scope(func(r *clir.Router) {
 			r.Use(m2)
 
-			r.SubFunc("party", func(ctx clir.Context) error {
-				ctx.Println("party")
+			r.RouteFunc("dance", func(ctx clir.Context) error {
+				ctx.Println("dance")
 				return nil
 			})
 		})
 
-		r.Group(func(r *clir.CommandRouter) {
+		r.Scope(func(r *clir.Router) {
 			r.Use(m3)
 
-			r.SubFunc("sleep", func(ctx clir.Context) error {
+			r.RouteFunc("sleep", func(ctx clir.Context) error {
 				ctx.Println("sleep")
 				return nil
 			})
@@ -157,11 +157,11 @@ func TestCommandRouter_Group(t *testing.T) {
 		b.Reset()
 
 		err = r.Run(clir.Context{
-			Args: []string{"party"},
+			Args: []string{"dance"},
 			Out:  &b,
 		})
 		is.NotError(t, err)
-		is.Equal(t, "m1\nm2\nparty\n", b.String())
+		is.Equal(t, "m1\nm2\ndance\n", b.String())
 
 		b.Reset()
 
@@ -173,8 +173,8 @@ func TestCommandRouter_Group(t *testing.T) {
 		is.Equal(t, "m1\nm3\nsleep\n", b.String())
 	})
 
-	t.Run("can nest groups", func(t *testing.T) {
-		r := clir.NewCommandRouter()
+	t.Run("can nest scopes", func(t *testing.T) {
+		r := clir.NewRouter()
 
 		m1 := newMiddleware(t, "m1")
 		m2 := newMiddleware(t, "m2")
@@ -182,23 +182,23 @@ func TestCommandRouter_Group(t *testing.T) {
 
 		r.Use(m1)
 
-		r.SubFunc("", func(ctx clir.Context) error {
+		r.RouteFunc("", func(ctx clir.Context) error {
 			ctx.Println("root")
 			return nil
 		})
 
-		r.Group(func(r *clir.CommandRouter) {
+		r.Scope(func(r *clir.Router) {
 			r.Use(m2)
 
-			r.SubFunc("party", func(ctx clir.Context) error {
-				ctx.Println("party")
+			r.RouteFunc("dance", func(ctx clir.Context) error {
+				ctx.Println("dance")
 				return nil
 			})
 
-			r.Group(func(r *clir.CommandRouter) {
+			r.Scope(func(r *clir.Router) {
 				r.Use(m3)
 
-				r.SubFunc("sleep", func(ctx clir.Context) error {
+				r.RouteFunc("sleep", func(ctx clir.Context) error {
 					ctx.Println("sleep")
 					return nil
 				})
@@ -215,11 +215,11 @@ func TestCommandRouter_Group(t *testing.T) {
 		b.Reset()
 
 		err = r.Run(clir.Context{
-			Args: []string{"party"},
+			Args: []string{"dance"},
 			Out:  &b,
 		})
 		is.NotError(t, err)
-		is.Equal(t, "m1\nm2\nparty\n", b.String())
+		is.Equal(t, "m1\nm2\ndance\n", b.String())
 
 		b.Reset()
 
@@ -232,51 +232,53 @@ func TestCommandRouter_Group(t *testing.T) {
 	})
 }
 
-func TestCommandRouter_SubGroup(t *testing.T) {
-	t.Run("can group commands with a new middleware stack", func(t *testing.T) {
-		r := clir.NewCommandRouter()
+func TestRouter_Branch(t *testing.T) {
+	t.Run("can branch into a new router with a new middleware stack", func(t *testing.T) {
+		r := clir.NewRouter()
 
 		m1 := newMiddleware(t, "m1")
 		m2 := newMiddleware(t, "m2")
 
 		r.Use(m1)
 
-		r.SubGroup("party", func(r *clir.CommandRouter) {
+		r.Branch("dance", func(r *clir.Router) {
 			r.Use(m2)
 
-			r.SubFunc("", func(ctx clir.Context) error {
-				ctx.Println("party root")
+			r.RouteFunc("", func(ctx clir.Context) error {
+				ctx.Println("dance root")
 				return nil
 			})
 
-			r.SubFunc("list", func(ctx clir.Context) error {
-				ctx.Println("party list")
+			r.RouteFunc("list", func(ctx clir.Context) error {
+				ctx.Println("dance list")
 				return nil
 			})
 		})
 
 		var b strings.Builder
 		err := r.Run(clir.Context{
-			Args: []string{"party"},
+			Args: []string{"dance"},
 			Out:  &b,
 		})
 		is.NotError(t, err)
-		is.Equal(t, "m1\nm2\nparty root\n", b.String())
+		is.Equal(t, "m1\nm2\ndance root\n", b.String())
 
 		b.Reset()
 
 		err = r.Run(clir.Context{
-			Args: []string{"party", "list"},
+			Args: []string{"dance", "list"},
 			Out:  &b,
 		})
 		is.NotError(t, err)
-		is.Equal(t, "m1\nm2\nparty list\n", b.String())
+		is.Equal(t, "m1\nm2\ndance list\n", b.String())
 	})
 }
 
 func newMiddleware(t *testing.T, name string) clir.Middleware {
-	return func(next clir.Command) clir.Command {
-		return clir.CommandFunc(func(ctx clir.Context) error {
+	t.Helper()
+
+	return func(next clir.Runner) clir.Runner {
+		return clir.RunnerFunc(func(ctx clir.Context) error {
 			ctx.Println(name)
 			return next.Run(ctx)
 		})

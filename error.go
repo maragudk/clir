@@ -7,5 +7,5 @@ func (e Error) Error() string {
 }
 
 const (
-	ErrorNotFound = Error("not found")
+	ErrorRouteNotFound = Error("route not found")
 )

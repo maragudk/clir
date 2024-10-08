@@ -9,9 +9,9 @@ import (
 )
 
 func TestRun(t *testing.T) {
-	t.Run("can run a command", func(t *testing.T) {
+	t.Run("can run a runner", func(t *testing.T) {
 		var called bool
-		clir.Run(clir.CommandFunc(func(ctx clir.Context) error {
+		clir.Run(clir.RunnerFunc(func(ctx clir.Context) error {
 			called = true
 			return nil
 		}))
