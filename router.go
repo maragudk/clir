@@ -43,6 +43,9 @@ func (r *Router) Run(ctx Context) error {
 // Route a [Runner] with the given pattern.
 // Routes are matched in the order they were added.
 func (r *Router) Route(pattern string, runner Runner) {
+	if _, ok := r.runners[pattern]; ok {
+		panic("cannot add route which already exists")
+	}
 	r.patterns = append(r.patterns, pattern)
 	r.runners[pattern] = runner
 }
@@ -76,7 +79,7 @@ type Middleware = func(next Runner) Runner
 // If called in a [Scope], it will apply to all routes in that scope.
 func (r *Router) Use(middlewares ...Middleware) {
 	if len(r.runners) > 0 {
-		panic("cannot use middlewares after adding routes")
+		panic("cannot add middlewares after adding routes")
 	}
 	r.middlewares = append(r.middlewares, middlewares...)
 }

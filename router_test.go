@@ -58,6 +58,24 @@ func TestRouter_RouteFunc(t *testing.T) {
 		is.NotError(t, err)
 		is.True(t, called)
 	})
+
+	t.Run("panics if the route already exists", func(t *testing.T) {
+		r := clir.NewRouter()
+
+		r.RouteFunc("", func(ctx clir.Context) error {
+			return nil
+		})
+
+		defer func() {
+			if rec := recover(); rec == nil {
+				t.FailNow()
+			}
+		}()
+
+		r.RouteFunc("", func(ctx clir.Context) error {
+			return nil
+		})
+	})
 }
 
 func TestRouter_Use(t *testing.T) {
@@ -271,6 +289,22 @@ func TestRouter_Branch(t *testing.T) {
 		})
 		is.NotError(t, err)
 		is.Equal(t, "m1\nm2\ndance list\n", b.String())
+	})
+
+	t.Run("panics if the route already exists", func(t *testing.T) {
+		r := clir.NewRouter()
+
+		r.RouteFunc("", func(ctx clir.Context) error {
+			return nil
+		})
+
+		defer func() {
+			if rec := recover(); rec == nil {
+				t.FailNow()
+			}
+		}()
+
+		r.Branch("", func(r *clir.Router) {})
 	})
 }
 
