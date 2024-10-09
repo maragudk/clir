@@ -16,24 +16,12 @@ func NewRouter() *Router {
 
 // Run satisfies [Runner].
 func (r *Router) Run(ctx Context) error {
-	if len(ctx.Args) == 0 {
-		runner, ok := r.runners[""]
-		if !ok {
-			return ErrorRouteNotFound
-		}
-
-		// Apply middlewares in reverse order, so that middlewares are applied in the order they were added.
-		for i := len(r.middlewares) - 1; i >= 0; i-- {
-			runner = r.middlewares[i](runner)
-		}
-
-		return runner.Run(ctx)
-	}
-
 	for _, pattern := range r.patterns {
-		if ctx.Args[0] == pattern {
+		if (len(ctx.Args) == 0 && pattern == "") || (ctx.Args[0] == pattern) {
 			runner := r.runners[pattern]
-			ctx.Args = ctx.Args[1:]
+			if len(ctx.Args) > 0 {
+				ctx.Args = ctx.Args[1:]
+			}
 
 			for i := len(r.middlewares) - 1; i >= 0; i-- {
 				runner = r.middlewares[i](runner)
