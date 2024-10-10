@@ -17,7 +17,7 @@ func NewRouter() *Router {
 // Run satisfies [Runner].
 func (r *Router) Run(ctx Context) error {
 	for _, pattern := range r.patterns {
-		if (len(ctx.Args) == 0 && pattern == "") || (ctx.Args[0] == pattern) {
+		if (len(ctx.Args) == 0 && pattern == "") || (len(ctx.Args) > 0 && ctx.Args[0] == pattern) {
 			runner := r.runners[pattern]
 			if len(ctx.Args) > 0 {
 				ctx.Args = ctx.Args[1:]
