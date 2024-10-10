@@ -11,7 +11,9 @@ You can think of routing in a CLI the same way as routing in an HTTP server:
 - Flags are URL query parameters
 - STDIN/STDOUT are the request/response bodies
 
-CLIR is a Command Line Interface Router. ⚠️ Work-in-progress and will probably change a lot, but play around with it!
+CLIR is a Command Line Interface Router.
+
+⚠️ **This library is currently at the proof-of-concept level**. Feel free to play with it, but probably don't use anywhere serious yet. ⚠️
 
 Made with ✨sparkles✨ by [maragu](https://www.maragu.dev/).
 
