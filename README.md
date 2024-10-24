@@ -112,6 +112,7 @@ func postFromStdin(c *http.Client) clir.RunnerFunc {
 	}
 }
 
+// postFromRandom to example.com.
 func postFromRandom(c *http.Client) clir.RunnerFunc {
 	return func(ctx clir.Context) error {
 		randomNumber := rand.Int()
