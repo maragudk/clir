@@ -12,11 +12,12 @@ import (
 
 // Context for a [Runner] when it runs.
 type Context struct {
-	Args []string
-	Ctx  context.Context
-	Err  io.Writer
-	In   io.Reader
-	Out  io.Writer
+	Args    []string
+	Ctx     context.Context
+	Err     io.Writer
+	In      io.Reader
+	Matches []string
+	Out     io.Writer
 }
 
 func (c Context) Println(a ...any) {

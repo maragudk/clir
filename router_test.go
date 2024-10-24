@@ -76,6 +76,43 @@ func TestRouter_RouteFunc(t *testing.T) {
 			return nil
 		})
 	})
+
+	t.Run("supports regular expression in routes", func(t *testing.T) {
+		r := clir.NewRouter()
+
+		var called bool
+		r.RouteFunc(`\w+`, func(ctx clir.Context) error {
+			called = true
+			is.Equal(t, 1, len(ctx.Matches))
+			is.Equal(t, "dance", ctx.Matches[0])
+			return nil
+		})
+
+		err := r.Run(clir.Context{
+			Args: []string{"dance"},
+		})
+		is.NotError(t, err)
+		is.True(t, called)
+	})
+
+	t.Run("supports regular expression in routes including submatches", func(t *testing.T) {
+		r := clir.NewRouter()
+
+		var called bool
+		r.RouteFunc(`(\w+)`, func(ctx clir.Context) error {
+			called = true
+			is.Equal(t, 2, len(ctx.Matches))
+			is.Equal(t, "dance", ctx.Matches[0])
+			is.Equal(t, "dance", ctx.Matches[1])
+			return nil
+		})
+
+		err := r.Run(clir.Context{
+			Args: []string{"dance"},
+		})
+		is.NotError(t, err)
+		is.True(t, called)
+	})
 }
 
 func TestRouter_Use(t *testing.T) {

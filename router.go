@@ -1,9 +1,14 @@
 package clir
 
+import (
+	"regexp"
+	"strings"
+)
+
 // Router for [Runner]-s which itself satisfies [Runner].
 type Router struct {
 	middlewares []Middleware
-	patterns    []string
+	patterns    []*regexp.Regexp
 	routers     []*Router
 	runners     map[string]Runner
 }
@@ -17,9 +22,11 @@ func NewRouter() *Router {
 // Run satisfies [Runner].
 func (r *Router) Run(ctx Context) error {
 	for _, pattern := range r.patterns {
-		if (len(ctx.Args) == 0 && pattern == "") || (len(ctx.Args) > 0 && ctx.Args[0] == pattern) {
-			runner := r.runners[pattern]
+		if (len(ctx.Args) == 0 && pattern.String() == "^$") || (len(ctx.Args) > 0 && pattern.MatchString(ctx.Args[0])) {
+
+			runner := r.runners[pattern.String()]
 			if len(ctx.Args) > 0 {
+				ctx.Matches = pattern.FindStringSubmatch(ctx.Args[0])
 				ctx.Args = ctx.Args[1:]
 			}
 
@@ -43,10 +50,18 @@ func (r *Router) Run(ctx Context) error {
 // Route a [Runner] with the given pattern.
 // Routes are matched in the order they were added.
 func (r *Router) Route(pattern string, runner Runner) {
+	if !strings.HasPrefix(pattern, "^") {
+		pattern = "^" + pattern
+	}
+	if !strings.HasSuffix(pattern, "$") {
+		pattern += "$"
+	}
+
 	if _, ok := r.runners[pattern]; ok {
 		panic("cannot add route which already exists")
 	}
-	r.patterns = append(r.patterns, pattern)
+
+	r.patterns = append(r.patterns, regexp.MustCompile(pattern))
 	r.runners[pattern] = runner
 }
 
