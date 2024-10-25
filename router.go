@@ -1,6 +1,7 @@
 package clir
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -21,28 +22,38 @@ func NewRouter() *Router {
 
 // Run satisfies [Runner].
 func (r *Router) Run(ctx Context) error {
+	// Apply middlewares first, because they can modify the context, including the Context.Args to match against.
+	var middlewareCtx Context
+	var runner Runner = RunnerFunc(func(ctx Context) error {
+		middlewareCtx = ctx
+		return nil
+	})
+	// Apply middlewares in reverse order, so the first middleware is the outermost one, to be called first.
+	for i := len(r.middlewares) - 1; i >= 0; i-- {
+		runner = r.middlewares[i](runner)
+	}
+	if err := runner.Run(ctx); err != nil {
+		return fmt.Errorf("error while applying middleware: %w", err)
+	}
+	ctx = middlewareCtx
+
 	for _, pattern := range r.patterns {
 		if (len(ctx.Args) == 0 && pattern.String() == "^$") || (len(ctx.Args) > 0 && pattern.MatchString(ctx.Args[0])) {
-
-			runner := r.runners[pattern.String()]
+			runner = r.runners[pattern.String()]
 			if len(ctx.Args) > 0 {
 				ctx.Matches = pattern.FindStringSubmatch(ctx.Args[0])
 				ctx.Args = ctx.Args[1:]
-			}
-
-			for i := len(r.middlewares) - 1; i >= 0; i-- {
-				runner = r.middlewares[i](runner)
 			}
 
 			return runner.Run(ctx)
 		}
 	}
 
-	for _, router := range r.routers {
-		if err := router.Run(ctx); err == nil {
-			return err
-		}
-	}
+	//for _, router := range r.routers {
+	//	if err := router.Run(ctx); err == nil {
+	//		return err
+	//	}
+	//}
 
 	return ErrorRouteNotFound
 }
@@ -78,13 +89,13 @@ func (r *Router) Branch(pattern string, cb func(r *Router)) {
 }
 
 // Scope into a new [Router].
-// The middlewares from the parent router are copied to the new router,
+// The middlewares from the parent router are used in the new router,
 // but new middlewares within the scope are only added to the new router, not the parent router.
 func (r *Router) Scope(cb func(r *Router)) {
-	newR := NewRouter()
-	newR.middlewares = append(newR.middlewares, r.middlewares...)
-	cb(newR)
-	r.routers = append(r.routers, newR)
+	panic("not implemented")
+	//newR := NewRouter()
+	//cb(newR)
+	//r.routers = append(r.routers, newR)
 }
 
 // Middleware for [Router.Use].
