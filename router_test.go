@@ -198,6 +198,26 @@ func TestRouter_Use(t *testing.T) {
 		is.NotError(t, err)
 		is.True(t, called)
 	})
+
+	t.Run("does not call route if middleware doesn't call next", func(t *testing.T) {
+		r := clir.NewRouter()
+
+		r.Use(func(next clir.Runner) clir.Runner {
+			return clir.RunnerFunc(func(ctx clir.Context) error {
+				return nil
+			})
+		})
+
+		var called bool
+		r.RouteFunc("", func(ctx clir.Context) error {
+			called = true
+			return nil
+		})
+
+		err := r.Run(clir.Context{})
+		is.NotError(t, err)
+		is.True(t, !called)
+	})
 }
 
 //nolint:staticcheck

@@ -22,8 +22,10 @@ func NewRouter() *Router {
 // Run satisfies [Runner].
 func (r *Router) Run(ctx Context) error {
 	// Apply middlewares first, because they can modify the context, including the Context.Args to match against.
+	var called bool
 	var middlewareCtx Context
 	var runner Runner = RunnerFunc(func(ctx Context) error {
+		called = true
 		middlewareCtx = ctx
 		return nil
 	})
@@ -33,6 +35,9 @@ func (r *Router) Run(ctx Context) error {
 	}
 	if err := runner.Run(ctx); err != nil {
 		return fmt.Errorf("error while applying middleware: %w", err)
+	}
+	if !called {
+		return nil
 	}
 	ctx = middlewareCtx
 
