@@ -10,7 +10,6 @@ import (
 type Router struct {
 	middlewares []Middleware
 	patterns    []*regexp.Regexp
-	routers     []*Router
 	runners     map[string]Runner
 }
 

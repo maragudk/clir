@@ -200,6 +200,7 @@ func TestRouter_Use(t *testing.T) {
 	})
 }
 
+//nolint:staticcheck
 func TestRouter_Scope(t *testing.T) {
 	t.Skip("not implemented")
 
