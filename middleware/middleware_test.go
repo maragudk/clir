@@ -3,6 +3,7 @@ package middleware_test
 import (
 	"flag"
 	"os"
+	"strings"
 	"testing"
 
 	"maragu.dev/is"
@@ -66,6 +67,42 @@ func TestFlags(t *testing.T) {
 		is.True(t, *v)
 		is.NotNil(t, fancy)
 		is.True(t, *fancy)
+	})
+
+	t.Run("does not error on help flag but prints usage", func(t *testing.T) {
+		for _, f := range []string{"-h", "-help"} {
+			t.Run(f, func(t *testing.T) {
+				r := clir.NewRouter()
+
+				var v *bool
+				var outerFS *flag.FlagSet
+				r.Use(middleware.Flags(func(fs *flag.FlagSet) {
+					outerFS = fs
+					v = fs.Bool("v", false, "")
+				}))
+
+				var called bool
+				r.RouteFunc("", func(ctx clir.Context) error {
+					called = true
+					return nil
+				})
+
+				var b strings.Builder
+				err := r.Run(clir.Context{
+					Args: []string{f},
+					Err:  &b,
+				})
+				is.NotError(t, err)
+				is.True(t, !called)
+				is.NotNil(t, v)
+				is.True(t, !*v)
+
+				var usageB strings.Builder
+				outerFS.SetOutput(&usageB)
+				outerFS.Usage()
+				is.Equal(t, usageB.String(), b.String())
+			})
+		}
 	})
 }
 
