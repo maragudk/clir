@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log/slog"
 	"math/rand"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"maragu.dev/clir"
+	"maragu.dev/clir/middleware"
 )
 
 func main() {
@@ -25,19 +27,20 @@ func main() {
 	// Add logging middleware to all routes.
 	r.Use(log(l))
 
+	var v *bool
+	r.Use(middleware.Flags(func(fs *flag.FlagSet) {
+		v = fs.Bool("v", false, "verbose")
+	}))
+
 	// Add a root route which calls printHello.
 	r.Route("", printHello())
 
-	// Scope some middleware to just the routes within the scope.
-	r.Scope(func(r *clir.Router) {
-		r.Use(ping(c))
-
-		r.Route("get", get(c))
-	})
+	// Add a named route which calls get.
+	r.Route("get", get(c))
 
 	// Branch with subcommands
 	r.Branch("post", func(r *clir.Router) {
-		r.Use(ping(c))
+		r.Use(ping(c, v))
 
 		r.Route("stdin", postFromStdin(c))
 		r.Route("random", postFromRandom(c))
@@ -114,9 +117,12 @@ func log(l *slog.Logger) clir.Middleware {
 }
 
 // ping a URL to check the network.
-func ping(c *http.Client) clir.Middleware {
+func ping(c *http.Client, v *bool) clir.Middleware {
 	return func(next clir.Runner) clir.Runner {
 		return clir.RunnerFunc(func(ctx clir.Context) error {
+			if *v {
+				ctx.Println("Pinging!")
+			}
 			if _, err := c.Get("https://example.com"); err != nil {
 				return err
 			}
