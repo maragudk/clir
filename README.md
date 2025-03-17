@@ -11,7 +11,13 @@ You can think of routing in a CLI the same way as routing in an HTTP server:
 - Flags are URL query parameters
 - STDIN/STDOUT are the request/response bodies
 
-CLIR is a Command Line Interface Router.
+CLIR is a Command Line Interface Router that provides:
+- Intuitive routing with support for subcommands
+- Middleware for cross-cutting concerns
+- Built-in support for flags via the standard `flag` package
+- Built-in support for positional arguments with multiple data types (string, int, bool, float64)
+- A clean, composable API inspired by HTTP routers
+- No dependencies
 
 ⚠️ **This library is currently at the proof-of-concept level**. Feel free to play with it, but probably don't use anywhere serious yet. ⚠️
 
@@ -65,6 +71,24 @@ func main() {
 
 	// Add a named route which calls get.
 	r.Route("get", get(c))
+
+	// Add a greet command with positional arguments
+	r.Branch("greet", func(r *clir.Router) {
+		var name *string
+		var count *int
+
+		r.Use(middleware.Args(func(as *middleware.ArgSet) {
+			name = as.String("name", "World", "name to greet")
+			count = as.Int("count", 1, "number of times to greet")
+		}))
+
+		r.RouteFunc("", func(ctx clir.Context) error {
+			for range *count {
+				ctx.Printfln("Hello, %s!", *name)
+			}
+			return nil
+		})
+	})
 
 	// Branch with subcommands
 	r.Branch("post", func(r *clir.Router) {
