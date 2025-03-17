@@ -2,8 +2,8 @@
 
 <img src="logo.jpg" alt="CLIR logo" width="300" align="right"/>
 
-[![GoDoc](https://pkg.go.dev/badge/maragu.dev/clir)](https://pkg.go.dev/maragu.dev/clir)
-[![Go](https://github.com/maragudk/clir/actions/workflows/ci.yml/badge.svg)](https://github.com/maragudk/clir/actions/workflows/ci.yml)
+[![Docs](https://pkg.go.dev/badge/maragu.dev/clir)](https://pkg.go.dev/maragu.dev/clir)
+[![CI](https://github.com/maragudk/clir/actions/workflows/ci.yml/badge.svg)](https://github.com/maragudk/clir/actions/workflows/ci.yml)
 
 You can think of routing in a CLI the same way as routing in an HTTP server:
 - Subcommands are URL paths
