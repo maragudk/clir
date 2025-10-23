@@ -38,6 +38,24 @@ func main() {
 	// Add a named route which calls get.
 	r.Route("get", get(c))
 
+	// Add a greet command with positional arguments
+	r.Branch("greet", func(r *clir.Router) {
+		var name *string
+		var count *int
+
+		r.Use(middleware.Args(func(as *middleware.ArgSet) {
+			name = as.String("name", "World", "name to greet")
+			count = as.Int("count", 1, "number of times to greet")
+		}))
+
+		r.RouteFunc("", func(ctx clir.Context) error {
+			for range *count {
+				ctx.Printfln("Hello, %s!", *name)
+			}
+			return nil
+		})
+	})
+
 	// Branch with subcommands
 	r.Branch("post", func(r *clir.Router) {
 		r.Use(ping(c, v))
