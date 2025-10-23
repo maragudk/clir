@@ -94,18 +94,24 @@ func (a *ArgSet) Var(value flag.Value, name string, usage string) {
 
 func (a *ArgSet) Parse(args []string) error {
 	a.args = args
-	
-	// Process all positional arguments based on formal definitions
+
+	// Reset all positional arguments to their declared defaults before parsing.
+	for _, f := range a.formal {
+		if err := f.Value.Set(f.DefValue); err != nil {
+			return err
+		}
+	}
+
+	// Process all positional arguments based on formal definitions.
 	for i, f := range a.formal {
 		if i < len(args) {
-			// Set the value from the args
+			// Set the value from the args.
 			if err := f.Value.Set(args[i]); err != nil {
 				return err
 			}
 		}
-		// else use default value which is already set
 	}
-	
+
 	return nil
 }
 

@@ -226,6 +226,29 @@ func TestArgs(t *testing.T) {
 		is.Equal(t, "0", *age) // Default value
 	})
 
+	t.Run("resets defaults between runs", func(t *testing.T) {
+		r := clir.NewRouter()
+
+		var name *string
+		r.Use(middleware.Args(func(as *middleware.ArgSet) {
+			name = as.String("name", "default", "set a name")
+		}))
+
+		r.RouteFunc("", func(ctx clir.Context) error {
+			return nil
+		})
+
+		err := r.Run(clir.Context{
+			Args: []string{"alice"},
+		})
+		is.NotError(t, err)
+		is.Equal(t, "alice", *name)
+
+		err = r.Run(clir.Context{})
+		is.NotError(t, err)
+		is.Equal(t, "default", *name)
+	})
+
 	t.Run("supports all positional argument types", func(t *testing.T) {
 		// Setup a test to verify the different positional argument types
 		var stringVal *string
